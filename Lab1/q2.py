@@ -25,7 +25,7 @@ def main():
 
             fig, axs = plt.subplots(1, 3)
             fig.set_size_inches(10, 3)
-            fig.suptitle(f'Resized images sizes by {level}.')
+            fig.suptitle(f'Resized images by {level}.')
             axs[0].imshow(img_l_new, cmap='Greys_r')
             axs[1].imshow(img_m_new, cmap='Greys_r')
             axs[2].imshow(img_p_new, cmap='Greys_r')
