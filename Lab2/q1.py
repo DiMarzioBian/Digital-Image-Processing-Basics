@@ -5,26 +5,38 @@ import matplotlib.pyplot as plt
 import keyboard
 
 
-def add_noise(img, level):
-    bins = np.arange(1, level) / level * 256 - 1
-    img_new = np.digitize(img, bins)
+def add_noise(img, mean=0, sigma=1, snr_sp=0.8):
+    n_g = np.random.normal(mean, sigma, img.shape)  # gaussian noise
+    n_sp = np.random.choice([0, -1, 1], size=img.shape, replace=True, p=[snr_sp, (1-snr_sp)/2, (1-snr_sp)/2])
+    img += n_g
+    img[n_sp == -1] = 0
+    img[n_sp == 1] = 255
+    return img
+
+
+def filter_median(img, pad=5):
+    H, W = img.shape
+    img_new = np.zeros_like(img)
+    img_pad = np.pad(img, pad, 'reflect')
+    for h in range(H):
+        for w in range(W):
+            img_new[h, w] = np.median(img_pad[h: h + 2 * pad + 1, w: w + 2 * pad + 1])
     return img_new
 
 
-def filter_median(img, level):
-    bins = np.arange(1, level) / level * 256 - 1
-    img_new = np.digitize(img, bins)
-    return img_new
-
-
-def filter_gaussian(img, level):
-    bins = np.arange(1, level) / level * 256 - 1
-    img_new = np.digitize(img, bins)
+def filter_gaussian(img, pad=5, sigma=5):
+    H, W = img.shape
+    img_new = np.zeros_like(img)
+    img_pad = np.pad(img, pad, 'reflect')
+    for h in range(H):
+        for w in range(W):
+            tmp = img_pad[h: h + 2 * pad + 1, w: w + 2 * pad + 1]
+            img_new[h, w] = np.median()
     return img_new
 
 
 def main():
-    img_l = cv2.imread('Lena.bmp', flags=0)  # flags = 0 to read grayscale images
+    img_l = cv2.imread('lena.tif', flags=0)  # flags = 0 to read grayscale images
     img_f = cv2.imread('flower.tif', flags=0)
 
     img_ln = add_noise(img_l)
