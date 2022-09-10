@@ -1,43 +1,75 @@
 import cv2
+import numpy as np
 import matplotlib.pyplot as plt
 
-import keyboard
+"""
+    Output will be corrupted if not set intermediate variable with larger sizes, they will be capped at 255 since
+    they are np.uint8.
+"""
+
+
+kernel = np.array([[1, 1, 1],
+                   [1, -8, 1],
+                   [1, 1, 1]])
+
+
+def filter_high_boost(img, A):
+    assert A >= 1
+
+    img_s = cv2.filter2D(src=img, ddepth=-1, kernel=kernel)
+
+    img_hb = img * (A - 1) + img_s
+    return img_hb, img_s
+
+
+def filter_high_boost_m(img, A):
+    assert A >= 1
+    img = img.astype(np.float64)
+    H, W = img.shape
+    img_s = np.zeros_like(img)
+    img_pad = np.pad(img, 1, 'reflect')
+
+    for h in range(H):
+        for w in range(W):
+            img_s[h, w] = (img_pad[h: h + 3, w: w + 3] * kernel).sum()
+
+    img_hb = img * (A - 1) + img_s
+    return np.clip(np.round(img_hb), a_min=0, a_max=255).astype(np.uint8), \
+           np.clip(np.round(img_s), a_min=0, a_max=255).astype(np.uint8)
 
 
 def main():
-    img_l = cv2.imread('Lena.bmp', flags=0)  # flags = 0 to read grayscale images
-    img_m = cv2.imread('Mandrill.bmp', flags=0)
-    img_p = cv2.imread('Peppers.bmp', flags=0)
+    img = cv2.imread('lena.tif', flags=0)  # flags = 0 to read grayscale images
 
-    i = 0
-    map_level = {0: 2, 1: 4, 2: 8, 3: 16}
-    level = map_level[i]
+    img_hb1, img_s = filter_high_boost(img, 2)
+    img_hb1_m, img_s_m = filter_high_boost_m(img, 2)
 
-    while True:
-        print('\nPress esc to terminate.')
-        print('Press any key to continue.')
-        if keyboard.read_key() != 'esc':
-            print(f'Drawing resized images by {level}...\n')
+    img_hb2, _ = filter_high_boost(img, 3)
+    img_hb2_m, _ = filter_high_boost_m(img, 3)
 
-            img_l_new = cv2.resize(img_l, (img_l.shape[0] // level, img_l.shape[1] // level), cv2.INTER_NEAREST)
-            img_m_new = cv2.resize(img_m, (img_l.shape[0] // level, img_l.shape[1] // level), cv2.INTER_NEAREST)
-            img_p_new = cv2.resize(img_p, (img_l.shape[0] // level, img_l.shape[1] // level), cv2.INTER_NEAREST)
+    plt.figure(0)
+    fig, axs = plt.subplots(2, 4)
+    fig.set_size_inches(15, 10)
+    axs[0, 0].imshow(img, cmap='Greys_r')
+    axs[0, 0].set_title(f'Original image: lena.tif')
+    axs[1, 0].imshow(img, cmap='Greys_r')
+    axs[1, 0].set_title(f'Original image: lena.tif')
 
-            fig, axs = plt.subplots(1, 3)
-            fig.set_size_inches(10, 3)
-            fig.suptitle(f'Resized images sizes by {level}.')
-            axs[0].imshow(img_l_new, cmap='Greys_r')
-            axs[1].imshow(img_m_new, cmap='Greys_r')
-            axs[2].imshow(img_p_new, cmap='Greys_r')
-            plt.show()
-        else:
-            break
+    axs[0, 1].imshow(img_s, cmap='Greys_r')
+    axs[0, 1].set_title(f'Laplacian filtered image: OpenCV')
+    axs[1, 1].imshow(img_s_m, cmap='Greys_r')
+    axs[1, 1].set_title(f'Laplacian filtered image: Manual')
 
-        i += 1
-        if i >= len(map_level):
-            break
-        else:
-            level = map_level[i]
+    axs[0, 2].imshow(img_hb1, cmap='Greys_r')
+    axs[0, 2].set_title(f'A = 2 | np.uint8')
+    axs[1, 2].imshow(img_hb1_m, cmap='Greys_r')
+    axs[1, 2].set_title(f'A = 2 | np.float')
+
+    axs[0, 3].imshow(img_hb2, cmap='Greys_r')
+    axs[0, 3].set_title(f'A = 3 | np.uint8')
+    axs[1, 3].imshow(img_hb2_m, cmap='Greys_r')
+    axs[1, 3].set_title(f'A = 3 | np.float')
+    plt.show()
 
 
 if __name__ == '__main__':

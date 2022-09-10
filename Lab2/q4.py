@@ -2,63 +2,61 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+"""
+    H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
+    RuntimeWarning: divide by zero encountered in double_scalars
+    Since D is zero, (D0 / D) will be infinity and the final value will be set to 0
+"""
 
-def histTransfer(img_1, img_2):
-    hist_1 = cv2.calcHist([img_1], channels=[0], mask=None, histSize=[256], ranges=[0.0, 255.0])
-    hist_2 = cv2.calcHist([img_2], channels=[0], mask=None, histSize=[256], ranges=[0.0, 255.0])
-    img_1_new = cv2.equalizeHist(img_1, hist_2)
-    hist_1_new = cv2.calcHist([img_2], channels=[0], mask=None, histSize=[256], ranges=[0.0, 255.0])
-    return img_1_new, hist_1, hist_1_new
+
+def filter_butterworth(f_img, D0, n, type_pass='high'):
+    type_high = True if type_pass == 'high' else False
+    M, N = f_img.shape
+    H = np.zeros((M, N), dtype=np.float)
+
+    for u in range(M):
+        for v in range(N):
+            D = np.sqrt((u - M / 2) ** 2 + (v - N / 2) ** 2)
+            if type_high:
+                H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
+            else:
+                H[u, v] = 1 / (1 + (D / D0) ** (2 * n))
+
+    ff_img = f_img * H
+    return np.abs(np.fft.ifft2(np.fft.ifftshift(ff_img))), H
 
 
 def main():
-    img_l = cv2.imread('Lena.bmp', flags=0)  # flags = 0 to read grayscale images
-    img_m = cv2.imread('Mandrill.bmp', flags=0)
-    img_p = cv2.imread('Peppers.bmp', flags=0)
+    img = cv2.imread('pepper_corrupt.tif', flags=0)  # flags = 0 to read grayscale images
+    f_img = np.fft.fft2(img)
+    fs_img = np.fft.fftshift(f_img)
 
-    print('Start histogram transferring...')
-    img_l_new, hist_l, hist_l_new = histTransfer(img_l, img_m)
-    img_m_new, hist_m, hist_m_new = histTransfer(img_m, img_p)
-    img_p_new, hist_p, hist_p_new = histTransfer(img_p, img_l)
+    img_hp, hpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='high')
+    img_lp, lpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='low')
 
-    print(f'Drawing histogram transferred images...')
-    # lena to mandrill
     plt.figure(0)
-    fig, axs = plt.subplots(3, 2)
-    fig.set_size_inches(10, 10)
-    fig.suptitle(f'Transferred "Lena.bmp" from histogram of "Mandrill.bmp".')
-    axs[0, 0].imshow(img_l, cmap='Greys_r')
-    axs[0, 1].plot(hist_l)
-    axs[1, 0].imshow(img_m, cmap='Greys_r')
-    axs[1, 1].plot(hist_m)
-    axs[2, 0].imshow(img_l_new, cmap='Greys_r')
-    axs[2, 1].plot(hist_l_new)
-    plt.show()
+    fig, axs = plt.subplots(2, 4)
+    fig.set_size_inches(15, 9)
+    axs[0, 0].imshow(img, cmap='Greys_r')
+    axs[0, 0].set_title(f'Original image: lena.tif')
+    axs[1, 0].imshow(img, cmap='Greys_r')
+    axs[1, 0].set_title(f'Original image: lena.tif')
 
-    # mandrill to peppers
-    plt.figure(1)
-    fig, axs = plt.subplots(3, 2)
-    fig.set_size_inches(10, 10)
-    fig.suptitle(f'Transferred "Mandrill.bmp" from histogram of "Peppers.bmp".')
-    axs[0, 0].imshow(img_m, cmap='Greys_r')
-    axs[0, 1].plot(hist_m)
-    axs[1, 0].imshow(img_p, cmap='Greys_r')
-    axs[1, 1].plot(hist_p)
-    axs[2, 0].imshow(img_m_new, cmap='Greys_r')
-    axs[2, 1].plot(hist_m_new)
-    plt.show()
+    axs[0, 1].imshow(np.log1p(np.abs(f_img)), cmap='Greys_r')
+    axs[0, 1].set_title(f'images in freq domain')
+    axs[1, 1].imshow(np.log1p(np.abs(fs_img)), cmap='Greys_r')
+    axs[1, 1].set_title(f'images in freq domain shifted')
 
-    # peppers to lena
-    plt.figure(2)
-    fig, axs = plt.subplots(3, 2)
-    fig.set_size_inches(10, 10)
-    fig.suptitle(f'Transferred "Peppers.bmp" from histogram of "Lena.bmp".')
-    axs[0, 0].imshow(img_p, cmap='Greys_r')
-    axs[0, 1].plot(hist_p)
-    axs[1, 0].imshow(img_l, cmap='Greys_r')
-    axs[1, 1].plot(hist_l)
-    axs[2, 0].imshow(img_p_new, cmap='Greys_r')
-    axs[2, 1].plot(hist_p_new)
+    axs[0, 2].imshow(hpf, cmap='Greys_r')
+    axs[0, 2].set_title(f'High-pass filter')
+    axs[1, 2].imshow(lpf, cmap='Greys_r')
+    axs[1, 2].set_title(f'Low-pass filter')
+
+    axs[0, 3].imshow(img_hp, cmap='Greys_r')
+    axs[0, 3].set_title(f'High-pass output')
+    axs[1, 3].imshow(img_lp, cmap='Greys_r')
+    axs[1, 3].set_title(f'Low-pass output')
+
     plt.show()
 
 

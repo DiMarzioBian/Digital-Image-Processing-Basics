@@ -2,57 +2,62 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-import keyboard
+"""
+    H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
+    RuntimeWarning: divide by zero encountered in double_scalars
+    Since D is zero, (D0 / D) will be infinity and the final value will be set to 0
+"""
 
 
-def localEqualizeHist(img, len_window):
-    len_one_side = len_window // 2
-    img_new = np.ones_like(img) * -1
-    img_pad = np.pad(img, len_one_side, 'reflect')
+def filter_butterworth(f_img, D0, n, type_pass='high'):
+    type_high = True if type_pass == 'high' else False
+    M, N = f_img.shape
+    H = np.zeros((M, N), dtype=np.float)
 
-    for row in range(img_new.shape[0]):
-        for col in range(img_new.shape[1]):
-            sub_img = img_pad[row: (row + len_window), col: (col + len_window)]
-            img_new[row, col] = cv2.equalizeHist(sub_img)[len_one_side, len_one_side]
+    for u in range(M):
+        for v in range(N):
+            D = np.sqrt((u - M / 2) ** 2 + (v - N / 2) ** 2)
+            if type_high:
+                H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
+            else:
+                H[u, v] = 1 / (1 + (D / D0) ** (2 * n))
 
-    return img_new
+    ff_img = f_img * H
+    return np.abs(np.fft.ifft2(np.fft.ifftshift(ff_img))), H
 
 
 def main():
-    img_l = cv2.imread('Lena.bmp', flags=0)  # flags = 0 to read grayscale images
-    img_m = cv2.imread('Mandrill.bmp', flags=0)
-    img_p = cv2.imread('Peppers.bmp', flags=0)
+    img = cv2.imread('lena.tif', flags=0)  # flags = 0 to read grayscale images
+    f_img = np.fft.fft2(img)
+    fs_img = np.fft.fftshift(f_img)
 
-    i = 0
-    map_level = {0: 3, 1: 21, 2: 41, 3: 61}
-    level = map_level[i]
+    img_hp, hpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='high')
+    img_lp, lpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='low')
 
-    while True:
-        print('\nPress esc to terminate.')
-        print('Press any key to continue.')
-        if keyboard.read_key() != 'esc':
-            print(f'Drawing local histogram equalization by window size {level} x {level}...\n')
+    plt.figure(0)
+    fig, axs = plt.subplots(2, 4)
+    fig.set_size_inches(15, 9)
+    axs[0, 0].imshow(img, cmap='Greys_r')
+    axs[0, 0].set_title(f'Original image: lena.tif')
+    axs[1, 0].imshow(img, cmap='Greys_r')
+    axs[1, 0].set_title(f'Original image: lena.tif')
 
-            img_l_new = localEqualizeHist(img_l, level)
-            img_m_new = localEqualizeHist(img_m, level)
-            img_p_new = localEqualizeHist(img_p, level)
+    axs[0, 1].imshow(np.log1p(np.abs(f_img)), cmap='Greys_r')
+    axs[0, 1].set_title(f'images in freq domain')
+    axs[1, 1].imshow(np.log1p(np.abs(fs_img)), cmap='Greys_r')
+    axs[1, 1].set_title(f'images in freq domain shifted')
 
-            fig, axs = plt.subplots(1, 3)
-            fig.set_size_inches(10, 3)
-            fig.suptitle(f'Local histogram equalized images by window size {level} x {level}.')
-            axs[0].imshow(img_l_new, cmap='Greys_r')
-            axs[1].imshow(img_m_new, cmap='Greys_r')
-            axs[2].imshow(img_p_new, cmap='Greys_r')
-            plt.show()
-            plt.savefig(f'img/img_q3_{level}.png')
-        else:
-            break
+    axs[0, 2].imshow(hpf, cmap='Greys_r')
+    axs[0, 2].set_title(f'High-pass filter')
+    axs[1, 2].imshow(lpf, cmap='Greys_r')
+    axs[1, 2].set_title(f'Low-pass filter')
 
-        i += 1
-        if i >= len(map_level):
-            break
-        else:
-            level = map_level[i]
+    axs[0, 3].imshow(img_hp, cmap='Greys_r')
+    axs[0, 3].set_title(f'High-pass output')
+    axs[1, 3].imshow(img_lp, cmap='Greys_r')
+    axs[1, 3].set_title(f'Low-pass output')
+
+    plt.show()
 
 
 if __name__ == '__main__':
