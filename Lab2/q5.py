@@ -4,9 +4,8 @@ from numpy.fft import fft2, fftshift, ifft2, ifftshift
 import matplotlib.pyplot as plt
 
 """
-    H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
-    RuntimeWarning: divide by zero encountered in double_scalars
-    Since D is zero, (D0 / D) will be infinity and the final value will be set to 0
+    Weiner's performance is stable with different set up.
+    Inverse filtering's performance is acceptable at dist=1, others whether have strips or no coins at all.
 """
 
 
