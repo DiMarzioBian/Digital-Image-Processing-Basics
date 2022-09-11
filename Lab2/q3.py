@@ -11,19 +11,19 @@ import matplotlib.pyplot as plt
 
 def filter_butterworth(f_img, D0, n, type_pass='high'):
     type_high = True if type_pass == 'high' else False
-    M, N = f_img.shape
-    H = np.zeros((M, N), dtype=np.float)
+    H, W = f_img.shape
+    H_filter = np.zeros((H, W), dtype=np.float)
 
-    for u in range(M):
-        for v in range(N):
-            D = np.sqrt((u - M / 2) ** 2 + (v - N / 2) ** 2)
+    for h in range(H):
+        for w in range(W):
+            D = np.sqrt((h - H / 2) ** 2 + (w - W / 2) ** 2)
             if type_high:
-                H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
+                H_filter[h, w] = 1 / (1 + (D0 / D) ** (2 * n))
             else:
-                H[u, v] = 1 / (1 + (D / D0) ** (2 * n))
+                H_filter[h, w] = 1 / (1 + (D / D0) ** (2 * n))
 
-    ff_img = f_img * H
-    return np.abs(np.fft.ifft2(np.fft.ifftshift(ff_img))), H
+    ff_img = f_img * H_filter
+    return np.abs(np.fft.ifft2(np.fft.ifftshift(ff_img))), H_filter
 
 
 def main():
@@ -31,12 +31,12 @@ def main():
     f_img = np.fft.fft2(img)
     fs_img = np.fft.fftshift(f_img)
 
-    img_hp, hpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='high')
-    img_lp, lpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='low')
+    img_hp, hpf = filter_butterworth(fs_img, D0=10, n=2, type_pass='high')
+    img_lp, lpf = filter_butterworth(fs_img, D0=10, n=2, type_pass='low')
 
     plt.figure(0)
     fig, axs = plt.subplots(2, 4)
-    fig.set_size_inches(15, 9)
+    fig.set_size_inches(15, 10)
     axs[0, 0].imshow(img, cmap='Greys_r')
     axs[0, 0].set_title(f'Original image: lena.tif')
     axs[1, 0].imshow(img, cmap='Greys_r')

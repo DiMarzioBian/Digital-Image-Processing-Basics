@@ -9,21 +9,18 @@ import matplotlib.pyplot as plt
 """
 
 
-def filter_butterworth(f_img, D0, n, type_pass='high'):
-    type_high = True if type_pass == 'high' else False
-    M, N = f_img.shape
-    H = np.zeros((M, N), dtype=np.float)
+def filter_band_pass_oval(f_img, D0_LP, D0_HP, n):
+    H, W = f_img.shape
+    H_filter = np.zeros((H, W), dtype=np.float)
 
-    for u in range(M):
-        for v in range(N):
-            D = np.sqrt((u - M / 2) ** 2 + (v - N / 2) ** 2)
-            if type_high:
-                H[u, v] = 1 / (1 + (D0 / D) ** (2 * n))
-            else:
-                H[u, v] = 1 / (1 + (D / D0) ** (2 * n))
+    for h in range(H):
+        for w in range(W):
+            D = np.sqrt(((h - H / 2) / 3) ** 2 + ((w - W / 2) / 1) ** 2)
+            H_filter[h, w] += 1 / (1 + (D0_LP / D) ** (2 * n))
+            H_filter[h, w] += 1 / (1 + (D / D0_HP) ** (2 * n))
 
-    ff_img = f_img * H
-    return np.abs(np.fft.ifft2(np.fft.ifftshift(ff_img))), H
+    ff_img = f_img * H_filter
+    return np.abs(np.fft.ifft2(np.fft.ifftshift(ff_img))), ff_img, H_filter
 
 
 def main():
@@ -31,31 +28,27 @@ def main():
     f_img = np.fft.fft2(img)
     fs_img = np.fft.fftshift(f_img)
 
-    img_hp, hpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='high')
-    img_lp, lpf = filter_butterworth(fs_img, D0=50, n=2, type_pass='low')
+    D0_LP = 18
+    D0_HP = 10
+    n = 100
+    img_r_2, f_img_r_2, h_f_2 = filter_band_pass_oval(fs_img, D0_LP=D0_LP, D0_HP=D0_HP, n=n)
 
     plt.figure(0)
-    fig, axs = plt.subplots(2, 4)
-    fig.set_size_inches(15, 9)
+    fig, axs = plt.subplots(2, 3)
+    fig.set_size_inches(15, 10)
     axs[0, 0].imshow(img, cmap='Greys_r')
     axs[0, 0].set_title(f'Original image: lena.tif')
-    axs[1, 0].imshow(img, cmap='Greys_r')
-    axs[1, 0].set_title(f'Original image: lena.tif')
-
     axs[0, 1].imshow(np.log1p(np.abs(f_img)), cmap='Greys_r')
     axs[0, 1].set_title(f'images in freq domain')
-    axs[1, 1].imshow(np.log1p(np.abs(fs_img)), cmap='Greys_r')
-    axs[1, 1].set_title(f'images in freq domain shifted')
+    axs[0, 2].imshow(np.log1p(np.abs(fs_img)), cmap='Greys_r')
+    axs[0, 2].set_title(f'images in freq domain shifted')
 
-    axs[0, 2].imshow(hpf, cmap='Greys_r')
-    axs[0, 2].set_title(f'High-pass filter')
-    axs[1, 2].imshow(lpf, cmap='Greys_r')
-    axs[1, 2].set_title(f'Low-pass filter')
-
-    axs[0, 3].imshow(img_hp, cmap='Greys_r')
-    axs[0, 3].set_title(f'High-pass output')
-    axs[1, 3].imshow(img_lp, cmap='Greys_r')
-    axs[1, 3].set_title(f'Low-pass output')
+    axs[1, 0].imshow(h_f_2, cmap='Greys_r')
+    axs[1, 0].set_title(f'Band-pass filter | ({D0_LP}, {D0_HP}, n={n})')
+    axs[1, 1].imshow(np.log1p(np.abs(f_img_r_2)), cmap='Greys_r')
+    axs[1, 1].set_title(f'Restored image in freq domain shifted')
+    axs[1, 2].imshow(img_r_2, cmap='Greys_r')
+    axs[1, 2].set_title(f'Restored image')
 
     plt.show()
 
