@@ -39,36 +39,30 @@ def filter_high_boost_m(img, A):
 
 
 def main():
-    img = cv2.imread('lena.tif', flags=0)  # flags = 0 to read grayscale images
+    img = cv2.imread('flower.tif', flags=0)  # flags = 0 to read grayscale images
 
-    img_hb1, img_s = filter_high_boost(img, 2)
-    img_hb1_m, img_s_m = filter_high_boost_m(img, 2)
+    _, img_s_cv = filter_high_boost(img, 2)
 
-    img_hb2, _ = filter_high_boost(img, 3)
-    img_hb2_m, _ = filter_high_boost_m(img, 3)
+    img_hb_m1, img_s_m = filter_high_boost_m(img, 2)
+    img_hb_m2, _ = filter_high_boost_m(img, 3)
 
     plt.figure(0)
-    fig, axs = plt.subplots(2, 4)
+    fig, axs = plt.subplots(2, 3)
     fig.set_size_inches(15, 10)
     axs[0, 0].imshow(img, cmap='Greys_r')
-    axs[0, 0].set_title(f'Original image: lena.tif')
+    axs[0, 0].set_title(f'Original image: flower.tif')
     axs[1, 0].imshow(img, cmap='Greys_r')
-    axs[1, 0].set_title(f'Original image: lena.tif')
+    axs[1, 0].set_title(f'Original image: flower.tif')
 
-    axs[0, 1].imshow(img_s, cmap='Greys_r')
+    axs[0, 1].imshow(img_s_cv, cmap='Greys_r')
     axs[0, 1].set_title(f'Laplacian filtered image: OpenCV')
     axs[1, 1].imshow(img_s_m, cmap='Greys_r')
     axs[1, 1].set_title(f'Laplacian filtered image: Manual')
 
-    axs[0, 2].imshow(img_hb1, cmap='Greys_r')
-    axs[0, 2].set_title(f'A = 2 | np.uint8')
-    axs[1, 2].imshow(img_hb1_m, cmap='Greys_r')
-    axs[1, 2].set_title(f'A = 2 | np.float')
-
-    axs[0, 3].imshow(img_hb2, cmap='Greys_r')
-    axs[0, 3].set_title(f'A = 3 | np.uint8')
-    axs[1, 3].imshow(img_hb2_m, cmap='Greys_r')
-    axs[1, 3].set_title(f'A = 3 | np.float')
+    axs[0, 2].imshow(img_hb_m1, cmap='Greys_r')
+    axs[0, 2].set_title(f'A = 2 | Manual')
+    axs[1, 2].imshow(img_hb_m2, cmap='Greys_r')
+    axs[1, 2].set_title(f'A = 3 | Manual')
     plt.show()
 
 

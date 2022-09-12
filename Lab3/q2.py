@@ -4,40 +4,43 @@ import matplotlib.pyplot as plt
 import keyboard
 
 
+def q1(img_bgr):
+    img_rgb = img_bgr[:, :, (1, 0)]
+    return img_rgb
+
+
+def q2(img):
+    img[:, :, (0, 1)] = img[:, :, (1, 0)]
+    return img
+
+
+def q3(img):
+    img[:, :, (0, 1)] = img[:, :, (1, 0)]
+    return img
+
+
 def main():
-    img_l = cv2.imread('Lena.bmp', flags=0)  # flags = 0 to read grayscale images
-    img_m = cv2.imread('Mandrill.bmp', flags=0)
-    img_p = cv2.imread('Peppers.bmp', flags=0)
+    img = cv2.imread('flowers.tif', flags=0)  # flags = 0 to read grayscale images
 
-    i = 0
-    map_level = {0: 2, 1: 4, 2: 8, 3: 16}
-    level = map_level[i]
+    res1 = q1(img)
+    res2 = q2(img)
+    res3 = q3(img)
 
-    while True:
-        print('\nPress esc to terminate.')
-        print('Press any key to continue.')
-        if keyboard.read_key() != 'esc':
-            print(f'Drawing resized images by {level}...\n')
+    plt.figure(0)
+    fig, axs = plt.subplots(2, 2)
+    fig.set_size_inches(10, 10)
+    axs[0, 0].imshow(img, cmap='Greys_r')
+    axs[0, 0].set_title(f'Original image: flowers.tif')
 
-            img_l_new = cv2.resize(img_l, (img_l.shape[0] // level, img_l.shape[1] // level), cv2.INTER_NEAREST)
-            img_m_new = cv2.resize(img_m, (img_l.shape[0] // level, img_l.shape[1] // level), cv2.INTER_NEAREST)
-            img_p_new = cv2.resize(img_p, (img_l.shape[0] // level, img_l.shape[1] // level), cv2.INTER_NEAREST)
+    axs[0, 1].imshow(res1, cmap='Greys_r')
+    axs[0, 1].set_title(f'Equalize individually')
 
-            fig, axs = plt.subplots(1, 3)
-            fig.set_size_inches(10, 3)
-            fig.suptitle(f'Resized images sizes by {level}.')
-            axs[0].imshow(img_l_new, cmap='Greys_r')
-            axs[1].imshow(img_m_new, cmap='Greys_r')
-            axs[2].imshow(img_p_new, cmap='Greys_r')
-            plt.show()
-        else:
-            break
+    axs[1, 0].imshow(res2, cmap='Greys_r')
+    axs[1, 0].set_title(f'Equalize V')
 
-        i += 1
-        if i >= len(map_level):
-            break
-        else:
-            level = map_level[i]
+    axs[1, 1].imshow(res3, cmap='Greys_r')
+    axs[1, 1].set_title(f'Equalize L')
+    plt.show()
 
 
 if __name__ == '__main__':

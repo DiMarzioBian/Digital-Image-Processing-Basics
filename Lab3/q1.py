@@ -3,87 +3,110 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 """
-    Statistically, median filter outperforms gaussian filter on MSE.
-
-    Subjectively, median filter also gives a better view. One reason could be that gaussian filter
-    cannot handle salt and pepper noise very well since they are sensitive to neighbor values.
-
-    And since we are not using very big sigma for gaussian noise, median filter output still preserve
-    many details of original images, I've tried bigger sigma and the result is getting worse on details.
 """
 
 
-def add_noise(img, mean=0, sigma=5, snr_sp=0.8):
-    n_g = np.random.normal(mean, sigma, img.shape)  # gaussian noise
-    n_sp = np.random.choice([0, -1, 1], size=img.shape, replace=True, p=[snr_sp, (1 - snr_sp) / 2, (1 - snr_sp) / 2])
-
-    img_n = np.clip(np.round(img + n_g), a_min=0, a_max=255)
-    img_n[n_sp == -1] = 0
-    img_n[n_sp == 1] = 255
-    return img_n
+def rotate_hsv_clockwise(img, angle):
+    img = img.astype(np.float)
+    img[:, :, 0] += angle / 2
+    img[:, :, 0][img[:, :, 0] >= 180] -= 180
+    return img.astype(np.uint8)
 
 
-def filter_median(img, k_size=5):
-    assert k_size > 0 and k_size % 2 == 1
-    H, W = img.shape
-    img_new = np.zeros_like(img)
-    img_pad = np.pad(img, k_size // 2, 'reflect')
-    for h in range(H):
-        for w in range(W):
-            img_new[h, w] = np.median(img_pad[h: h + k_size, w: w + k_size])
-    return img_new
+def rgb_to_hsv(img):
+    img = img.astype(np.float)
+    Height, Width, Channels = img.shape
+    img_hsv = np.zeros_like(img, dtype=np.float)
+
+    for height in range(Height):
+        for width in range(Width):
+            (r, g, b) = img[height, width, :]
+
+            c_max = np.max([r, g, b])
+            c_min = np.min([r, g, b])
+            c_range = (c_max-c_min)
+
+            if c_min == c_max:
+                img_hsv[height, width, :] = [0, 0, c_max]
+                continue
+
+            rc = (c_max - r) * 60 / c_range
+            gc = (c_max - g) * 60 / c_range
+            bc = (c_max - b) * 60 / c_range
+            if r == c_max:
+                h = bc - gc
+            elif g == c_max:
+                h = 120 + rc - bc
+            else:
+                h = 240 + gc - rc
+
+            h += 360 if h < 0 else 0
+            img_hsv[height, width, :] = [h / 2, (c_max - c_min) * 255 / c_max, c_max]
+
+    return np.floor(img_hsv).astype(np.uint8)
+
+
+def hsv_to_bgr(img):
+    img = img.astype(np.float)
+    Height, Width, Channels = img.shape
+    img_rgb = np.zeros_like(img, dtype=np.float)
+
+    for height in range(Height):
+        for width in range(Width):
+            (h, s, v) = img[height, width, :]
+
+            h60 = h / 60.0
+            h60f = np.floor(h60)
+            hi = int(h60f) % 6
+            f = h60 - h60f
+            p = v * (1 - s)
+            q = v * (1 - f * s)
+            t = v * (1 - (1 - f) * s)
+            r, g, b = 0, 0, 0
+            if hi == 0:
+                r, g, b = v, t, p
+            elif hi == 1:
+                r, g, b = q, v, p
+            elif hi == 2:
+                r, g, b = p, v, t
+            elif hi == 3:
+                r, g, b = p, q, v
+            elif hi == 4:
+                r, g, b = t, p, v
+            elif hi == 5:
+                r, g, b = v, p, q
+            img_rgb[height, width, :] = [r, g, b]
+
+    return np.floor(img_rgb * 255).astype(np.uint8)
 
 
 def main():
-    img_l = cv2.imread('lena.tif', flags=0)  # flags = 0 to read grayscale images
-    img_f = cv2.imread('flower.tif', flags=0)
+    img = cv2.imread('flowers.jpg')[:, :, ::-1]  # convert bgr to rgb
+    mask = np.clip(np.repeat(np.expand_dims(cv2.imread('mask.tif', flags=0), axis=-1), 3, axis=-1), a_min=0, a_max=1)
 
-    img_ln = add_noise(img_l)
-    mse_ln = np.mean(np.power((img_ln - img_l), 2))
+    img_hsv = rgb_to_hsv(img)
 
-    img_fn = add_noise(img_f)
-    mse_fn = np.mean(np.power((img_fn - img_f), 2))
+    img_hsv_r1 = rotate_hsv_clockwise(img_hsv, 120)
+    img_hsv_r2 = rotate_hsv_clockwise(img_hsv, 240)
 
-    # 3: 98.0602, 5: 87.2455, 7: 121.1098, 11: 183.7591, 21: 356.2935
-    img_lnm = filter_median(img_ln, k_size=5)
-    mse_lnm = np.mean(np.power((img_lnm - img_l), 2))
-
-    # 3: 376.9795, 5: 386.0963, 7: 389.4670, 9: 390.9661
-    img_lng = cv2.GaussianBlur(img_ln, (11, 11), 3)
-    mse_lng = np.mean(np.power((img_lng - img_l), 2))
-
-    # 3: 55.0973, 5: 23.7782, 7: 32.8653, 9: 41.8818
-    img_fnm = filter_median(img_fn, k_size=5)
-    mse_fnm = np.mean(np.power((img_fnm - img_f), 2))
-
-    # 3: 598.5196, 9: 216.4980, 13 :184.5909, 15: 179.8268, 17: 178.5319, 19: 179.4055, 21: 181.6983
-    img_fng = cv2.GaussianBlur(img_fn, (17, 17), 0)
-    mse_fng = np.mean(np.power((img_fng - img_f), 2))
+    img_r1 = hsv_to_bgr(img_hsv_r1)
+    img_r2 = hsv_to_bgr(img_hsv_r2)
 
     plt.figure(0)
     fig, axs = plt.subplots(2, 2)
     fig.set_size_inches(10, 10)
-    axs[0, 0].imshow(img_l, cmap='Greys_r')
-    axs[0, 0].set_title(f'Original image: lena.tif')
-    axs[0, 1].imshow(img_ln, cmap='Greys_r')
-    axs[0, 1].set_title(f'Added 2 noises, MSE = {mse_ln:.4f}')
-    axs[1, 0].imshow(img_lnm, cmap='Greys_r')
-    axs[1, 0].set_title(f'Median filter, MSE = {mse_lnm:.4f}')
-    axs[1, 1].imshow(img_lng, cmap='Greys_r')
-    axs[1, 1].set_title(f'Gaussian filter, MSE = {mse_lng:.4f}')
-    plt.show()
 
-    plt.figure(1)
-    fig, axs = plt.subplots(2, 2)
-    fig.set_size_inches(10, 10)
-    axs[0, 0].imshow(img_f, cmap='Greys_r')
-    axs[0, 0].set_title(f'Original image: lena.tif')
-    axs[0, 1].imshow(img_fn, cmap='Greys_r')
-    axs[0, 1].set_title(f'Added 2 noises, MSE = {mse_fn:.4f}')
-    axs[1, 0].imshow(img_fnm, cmap='Greys_r')
-    axs[1, 0].set_title(f'Median filter, MSE = {mse_fnm:.4f}')
-    axs[1, 1].imshow(img_fng, cmap='Greys_r')
-    axs[1, 1].set_title(f'Gaussian filter, MSE = {mse_fng:.4f}')
+    axs[0, 0].imshow(img * mask)
+    axs[0, 0].set_title(f'Masked image: flowers.jpg')
+
+    axs[0, 1].imshow(img[:, :, ::-1] * mask)
+    axs[0, 1].set_title(f'Image swapped R and B')
+
+    axs[1, 0].imshow(img_r1 * mask)
+    axs[1, 0].set_title(f'H rotate | angle=120')
+
+    axs[1, 1].imshow(img_r2 * mask)
+    axs[1, 1].set_title(f'H rotate | angle=240')
     plt.show()
 
 

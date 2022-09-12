@@ -41,7 +41,7 @@ def main():
     axs[0, 0].set_title(f'Original image: pepper_corrupt.tif')
     axs[0, 1].imshow(np.log1p(np.abs(img_fft)), cmap='Greys_r')
     axs[0, 1].set_title(f'images in freq domain')
-    axs[0, 2].imshow(np.log1p(np.abs(img_ffts)), cmap='Greys_r')
+    axs[0, 2].imshow(np.log1p(np.abs(fftshift(img_fft))), cmap='Greys_r')
     axs[0, 2].set_title(f'images in freq domain shifted')
 
     axs[1, 0].imshow(h_f, cmap='Greys_r')

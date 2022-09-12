@@ -32,7 +32,7 @@ def filter_inverse(img_fft, psf_fft):
 
 
 def main():
-    angle, dist, snr = 180, 3, 0.99
+    angle, dist, snr = 180, 1, 0.99
     eps = 1e-5
 
     img = cv2.imread('coins_blurred.tif', flags=0)  # flags = 0 to read grayscale images
