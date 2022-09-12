@@ -1,7 +1,22 @@
+import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-import keyboard
+
+"""
+    HSV: V stands for value or brightness in HSB, dark area becomes darker since image is 
+         pretty bright. Check middle bottom leaves.
+    LAB: L stands for lightness, after equalized, dark area becomes darker since image is 
+         pretty bright. Check right bottom corner.
+"""
+map_rgb_to_xyz = np.array([
+    [0.412453, 0.357580, 0.1180423],
+    [0.212671, 0.715160, 0.072169],
+    [0.019334, 0.119193, 0.950227]
+])
+
+Xn = 0.950456
+Zn = 1.088754
 
 
 def equalize_1(img):
@@ -18,9 +33,9 @@ def equalize_2(img):
 
 
 def equalize_3(img):
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
-    img_new = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2RGB)
+    img_lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+    img_lab[:, :, 0] = cv2.equalizeHist(img_lab[:, :, 0])
+    img_new = cv2.cvtColor(img_lab, cv2.COLOR_LAB2RGB)
     return img_new
 
 
