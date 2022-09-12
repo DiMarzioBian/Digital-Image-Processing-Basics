@@ -4,27 +4,32 @@ import matplotlib.pyplot as plt
 import keyboard
 
 
-def q1(img_bgr):
-    img_rgb = img_bgr[:, :, (1, 0)]
-    return img_rgb
-
-
-def q2(img):
-    img[:, :, (0, 1)] = img[:, :, (1, 0)]
+def equalize_1(img):
+    for c in range(3):
+        img[:, :, c] = cv2.equalizeHist(img[:, :, c])
     return img
 
 
-def q3(img):
-    img[:, :, (0, 1)] = img[:, :, (1, 0)]
-    return img
+def equalize_2(img):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
+    img_new = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2RGB)
+    return img_new
+
+
+def equalize_3(img):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
+    img_new = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2RGB)
+    return img_new
 
 
 def main():
-    img = cv2.imread('flowers.tif', flags=0)  # flags = 0 to read grayscale images
+    img = cv2.imread('flowers.jpg')[:, :, ::-1]  # convert bgr to rgb
 
-    res1 = q1(img)
-    res2 = q2(img)
-    res3 = q3(img)
+    res1 = equalize_1(img)
+    res2 = equalize_2(img)
+    res3 = equalize_3(img)
 
     plt.figure(0)
     fig, axs = plt.subplots(2, 2)
