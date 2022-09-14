@@ -19,20 +19,23 @@ Xn = 0.950456
 Zn = 1.088754
 
 
-def equalize_1(img):
+def equalize_1(img_in):
+    img = img_in.copy()
     for c in range(3):
         img[:, :, c] = cv2.equalizeHist(img[:, :, c])
     return img
 
 
-def equalize_2(img):
+def equalize_2(img_in):
+    img = img_in.copy()
     img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
     img_new = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2RGB)
     return img_new
 
 
-def equalize_3(img):
+def equalize_3(img_in):
+    img = img_in.copy()
     img_lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
     img_lab[:, :, 0] = cv2.equalizeHist(img_lab[:, :, 0])
     img_new = cv2.cvtColor(img_lab, cv2.COLOR_LAB2RGB)

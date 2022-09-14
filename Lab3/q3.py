@@ -21,14 +21,14 @@ def main():
     img_edges_hough = img_edges.copy()
 
     lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180, threshold=5, minLineLength=70, maxLineGap=20)
-    # lines = cv2.HoughLines(edges, rho=1, theta=np.pi / 180, threshold=10)
 
-    k_top = 10
-
+    # top prominent edge
     (x1, y1, x2, y2) = lines[0][0]
     cv2.line(img_hough, pt1=(x1, y1), pt2=(x2, y2), color=(0, 140, 255), thickness=5)
     cv2.line(img_edges_hough, pt1=(x1, y1), pt2=(x2, y2), color=(0, 140, 255), thickness=5)
 
+    # top k prominent edges
+    k_top = 10
     for line in lines[1:k_top]:
         (x1, y1, x2, y2) = line[0]
         cv2.line(img_hough, pt1=(x1, y1), pt2=(x2, y2), color=(0, 0, 255), thickness=2)

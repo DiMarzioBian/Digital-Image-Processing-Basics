@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def rotate_hsv_clockwise(img, angle):
     img = img.astype(np.float)
-    img[:, :, 0] += angle / 2
+    img[:, :, 0] += angle
     img[:, :, 0][img[:, :, 0] >= 180] -= 180
     return img.astype(np.uint8)
 
@@ -87,10 +87,10 @@ def main():
     img_hsv = rgb_to_hsv(img)
     img_hsv_cv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
-    img_hsv_r1 = rotate_hsv_clockwise(img_hsv, 120)
-    img_hsv_r2 = rotate_hsv_clockwise(img_hsv, 240)
-    img_hsv_r1_cv = rotate_hsv_clockwise(img_hsv_cv, 120)
-    img_hsv_r2_cv = rotate_hsv_clockwise(img_hsv_cv, 240)
+    img_hsv_r1 = rotate_hsv_clockwise(img_hsv, 60)
+    img_hsv_r2 = rotate_hsv_clockwise(img_hsv, 120)
+    img_hsv_r1_cv = rotate_hsv_clockwise(img_hsv_cv, 60)
+    img_hsv_r2_cv = rotate_hsv_clockwise(img_hsv_cv, 120)
 
     img_r1 = hsv_to_bgr(img_hsv_r1)
     img_r2 = hsv_to_bgr(img_hsv_r2)
@@ -108,16 +108,16 @@ def main():
     axs[0, 1].set_title(f'Image swapped R and B')
 
     axs[1, 0].imshow(img_r1 * mask)
-    axs[1, 0].set_title(f'Manual rotation | angle=120')
+    axs[1, 0].set_title(f'Manual rotation | angle=60')
 
     axs[1, 1].imshow(img_r2 * mask)
-    axs[1, 1].set_title(f'Manual rotation | angle=240')
+    axs[1, 1].set_title(f'Manual rotation | angle=120')
 
     axs[2, 0].imshow(img_r1_cv2 * mask)
-    axs[2, 0].set_title(f'OpenCV rotation | angle=120')
+    axs[2, 0].set_title(f'OpenCV rotation | angle=60')
 
     axs[2, 1].imshow(img_r2_cv2 * mask)
-    axs[2, 1].set_title(f'OpenCV rotation | angle=240')
+    axs[2, 1].set_title(f'OpenCV rotation | angle=120')
     plt.show()
 
 
