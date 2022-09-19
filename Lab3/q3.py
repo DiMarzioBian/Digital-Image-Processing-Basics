@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 
 def transform_hough(img):
@@ -16,7 +15,9 @@ def main():
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     threshold1, threshold2 = 60, 500
+
     edges = cv2.Canny(img_gray, threshold1=threshold1, threshold2=threshold2)
+
     img_edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
     img_edges_hough = img_edges.copy()
 
